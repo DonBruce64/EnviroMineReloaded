@@ -1,6 +1,6 @@
 package enviromine.dataclasses;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 /**This class is the structure for player runtime properties like hydration,
  * temperature, and sanity, as well as status effect like frostbite and
@@ -20,25 +20,25 @@ public final class PlayerProperties{
 	public double temp;
 	public double hydration;
 
-	public PlayerProperties(NBTTagCompound playerNBT){
-		if(playerNBT.hasKey("emine")){
-			NBTTagCompound playerCompound = playerNBT.getCompoundTag("emine");
-			this.isDehydrated = playerCompound.getBoolean("dehydrated");
-			this.temp = playerCompound.getDouble("temp");
-			this.hydration = playerCompound.getDouble("hydration");
+	public PlayerProperties(CompoundNBT playerNBT){
+		if(playerNBT.contains("emine")){
+			CompoundNBT emineNBT = playerNBT.getCompound("emine");
+			this.isDehydrated = emineNBT.getBoolean("dehydrated");
+			this.temp = emineNBT.getDouble("temp");
+			this.hydration = emineNBT.getDouble("hydration");
 		}else{
 			this.temp = startingTemp;
 			this.hydration = startingHydration;
 		}
 	}
 	
-	public NBTTagCompound getNBTTag(){
-		NBTTagCompound emineTag = new NBTTagCompound();
-		emineTag.setBoolean("isDehydrated", this.isDehydrated);
-		emineTag.setBoolean("isOverheated", this.isOverheated);
-		emineTag.setBoolean("isHypothermia", this.isHypothermia);
-		emineTag.setDouble("temp", this.temp);
-		emineTag.setDouble("hydration", this.hydration);
-		return emineTag;
+	public CompoundNBT getNBT(){
+		CompoundNBT emineNBT = new CompoundNBT();
+		emineNBT.putBoolean("isDehydrated", this.isDehydrated);
+		emineNBT.putBoolean("isOverheated", this.isOverheated);
+		emineNBT.putBoolean("isHypothermia", this.isHypothermia);
+		emineNBT.putDouble("temp", this.temp);
+		emineNBT.putDouble("hydration", this.hydration);
+		return emineNBT;
 	}
 }

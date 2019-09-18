@@ -4,19 +4,13 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import enviromine.EMINE;
 import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
 
 /**Main registry class.  This class should be referenced by any class looking for
  * EMINE items or blocks.  Adding new items and blocks is a simple as adding them
@@ -29,9 +23,6 @@ import net.minecraftforge.fml.relauncher.Side;
 public final class EMINERegistry{
 	/**All registered items are stored in this list as they are added.  Used to sort items in the creative tab.**/
 	public static List<Item> itemList = new ArrayList<Item>();
-	
-	/**Creative tab for items**/
-	public static final CreativeTabEMINE coreTab = new CreativeTabEMINE();
 
 	//Items
 	//public static final Item manual = new ItemManual().setCreativeTab(coreTab);
@@ -67,14 +58,17 @@ public final class EMINERegistry{
 				try{
 					Block block = (Block) field.get(null);
 					String name = field.getName().toLowerCase();
-					event.getRegistry().register(block.setRegistryName(name).setUnlocalizedName(name));
+					event.getRegistry().register(block.setRegistryName(name));
+					
+					//TODO do we need to register TEs anymore?
+					/*
 					if(block instanceof ITileEntityProvider){
 						Class<? extends TileEntity> tileEntityClass = ((ITileEntityProvider) block).createNewTileEntity(null, 0).getClass();
 						if(!registeredTileEntityClasses.contains(tileEntityClass)){
 							GameRegistry.registerTileEntity(tileEntityClass, tileEntityClass.getSimpleName());
 							registeredTileEntityClasses.add(tileEntityClass);
 						}
-					}
+					}*/
 				}catch(Exception e){
 					e.printStackTrace();
 				}
@@ -94,11 +88,11 @@ public final class EMINERegistry{
 					Item item = (Item) field.get(null);
 					String name = field.getName().toLowerCase();
 					if(!name.startsWith("itemblock")){
-						event.getRegistry().register(item.setRegistryName(name).setUnlocalizedName(name));
+						event.getRegistry().register(item.setRegistryName(name));
 						EMINERegistry.itemList.add(item);
 					}else{
 						name = name.substring("itemblock".length());
-						event.getRegistry().register(item.setRegistryName(name).setUnlocalizedName(name));
+						event.getRegistry().register(item.setRegistryName(name));
 						EMINERegistry.itemList.add(item);
 					}
 				}catch(Exception e){
@@ -127,8 +121,9 @@ public final class EMINERegistry{
 	
 	/**Registers a crafting recipe.  This is segmented out here as the method changes in 1.12 and the single location makes it easy for the script to update it.**/
 	private static void registerRecipe(ItemStack output, Object...params){
-		GameRegistry.addShapedRecipe(output, params);
-		++craftingNumber;
+		//TODO make this use JSON.
+		//GameRegistry.addShapedRecipe(output, params);
+		//++craftingNumber;
 	}
 	
 	/**
@@ -138,8 +133,8 @@ public final class EMINERegistry{
 	 * @param client
 	 * @param server
 	 */
-	private static <REQ extends IMessage, REPLY extends IMessage> void registerPacket(Class<REQ> packetClass, Class<? extends IMessageHandler<REQ, REPLY>> handlerClass, boolean client, boolean server){
-		if(client)EMINE.EMINENet.registerMessage(handlerClass, packetClass, ++packetNumber, Side.CLIENT);
-		if(server)EMINE.EMINENet.registerMessage(handlerClass, packetClass, ++packetNumber, Side.SERVER);
-	}
+	//private static <REQ extends IMessage, REPLY extends IMessage> void registerPacket(Class<REQ> packetClass, Class<? extends IMessageHandler<REQ, REPLY>> handlerClass, boolean client, boolean server){
+//		if(client)EMINE.EMINENet.registerMessage(handlerClass, packetClass, ++packetNumber, Side.CLIENT);
+	//	if(server)EMINE.EMINENet.registerMessage(handlerClass, packetClass, ++packetNumber, Side.SERVER);
+	//}
 }

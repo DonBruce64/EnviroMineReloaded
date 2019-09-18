@@ -8,21 +8,20 @@ import enviromine.EMINE;
 import enviromine.dataclasses.PlayerProperties;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**This class handles custom render changes.
  * Only runs on the client, unlike the other event systems.
  *
  * @author don_bruce
  */
-@Mod.EventBusSubscriber(Side.CLIENT)
-@SideOnly(Side.CLIENT)
+@Mod.EventBusSubscriber(Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class RenderEventSystem{
-	private static final Minecraft minecraft = Minecraft.getMinecraft();
 	public static final int screenDefaultX = 854;
 	public static final int screenDefaultY = 480;
 	
@@ -33,17 +32,18 @@ public final class RenderEventSystem{
      */
     @SubscribeEvent()
     public static void on(RenderGameOverlayEvent.Pre event){
+    	Minecraft mcInstance = Minecraft.getInstance();
     	if(event.getType().equals(RenderGameOverlayEvent.ElementType.HOTBAR)){
-			boolean flashCue = Minecraft.getMinecraft().theWorld.getTotalWorldTime()%40 < 20;
-	    	PlayerProperties properties = PlayerUpdateSystem.playerProperties.get(Minecraft.getMinecraft().thePlayer);
+			boolean flashCue = mcInstance.world.getGameTime()%40 < 20;
+	    	PlayerProperties properties = PlayerUpdateSystem.playerProperties.get(mcInstance.player);
 	    	
 	    	if(properties != null){
-		    	minecraft.getTextureManager().bindTexture(icons);
+	    		mcInstance.getTextureManager().bindTexture(icons);
 		    	GL11.glPushMatrix();
 				GL11.glBegin(GL11.GL_QUADS);
-		    	HudBarComponents.HYDRATION.render(event.getResolution().getScaledWidth()*0.01F, event.getResolution().getScaledHeight()*0.94F, event.getResolution().getScaledWidth()*0.25F, event.getResolution().getScaledHeight()*0.05F, properties.isDehydrated, properties.hydration < 15 && flashCue, properties.hydration/100D);
+		    	HudBarComponents.HYDRATION.render(event.getWindow().getScaledWidth()*0.01F, event.getWindow().getScaledHeight()*0.94F, event.getWindow().getScaledWidth()*0.25F, event.getWindow().getScaledHeight()*0.05F, properties.isDehydrated, properties.hydration < 15 && flashCue, properties.hydration/100D);
 		    	GL11.glEnd();
-		    	minecraft.fontRendererObj.drawString(((int) properties.hydration) + "%", (int) (event.getResolution().getScaledWidth()*0.20F), (int) (event.getResolution().getScaledHeight()*0.9525F), Color.WHITE.getRGB());
+		    	mcInstance.fontRenderer.drawString(((int) properties.hydration) + "%", (int) (event.getWindow().getScaledWidth()*0.20F), (int) (event.getWindow().getScaledHeight()*0.9525F), Color.WHITE.getRGB());
 		    	GL11.glPopMatrix();
 	    	}
     	}
