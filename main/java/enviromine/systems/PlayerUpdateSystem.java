@@ -3,17 +3,21 @@ package enviromine.systems;
 import java.util.HashMap;
 import java.util.Map;
 
+import enviromine.EMINE;
 import enviromine.dataclasses.DamageSources;
 import enviromine.dataclasses.PlayerProperties;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.potion.Potion;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 
 /**This class handles all tickable things that involve the player during gameplay.
  * This consists of hydration, temperature, and other status changes that need to
@@ -24,9 +28,10 @@ import net.minecraftforge.fml.common.Mod;
  *
  * @author don_bruce
  */
-@Mod.EventBusSubscriber()
+@Mod.EventBusSubscriber
 public final class PlayerUpdateSystem{
 	public static final Map<PlayerEntity, PlayerProperties> playerProperties = new HashMap<PlayerEntity, PlayerProperties>();
+	private static final Map<String, Effect> effectMap = new HashMap<String, Effect>();
 	
 	@SubscribeEvent
     public static void playerTick(TickEvent.PlayerTickEvent event){
@@ -65,17 +70,17 @@ public final class PlayerUpdateSystem{
     		}
     	}
     	
-    	//If player is dehydrated, apply potions.
-    	//By default this is mining_fatigue, but this is configurable.
-    	//Note that names here are yucky.  We have to get the potion by name,
-    	//then iterate over all effect instances the potion has,
-    	//and then make new instances with the correct duration.
+    	//If player is dehydrated, apply effects as specified in the config.
+    	//These are active until the player is no longer dehydrated.
     	if(properties.hydration < ConfigSystem.COMMON.dehydrationLevel.get()){
-    		for(String potionName : ConfigSystem.COMMON.dehydrationEffects.get()){
-    			//TODO potions don't apply effects?
-    			for(EffectInstance effectInstance : Potion.getPotionTypeForName(potionName).getEffects()){
-    				player.addPotionEffect(new EffectInstance(effectInstance.getPotion(), 50, 0));
-    			}    			
+    		for(String effectName : ConfigSystem.COMMON.dehydrationEffects.get()){
+    			if(!effectMap.containsKey(effectName)){
+    				if(ForgeRegistries.POTIONS.containsKey(new ResourceLocation(effectName))){
+    					effectMap.put(effectName, ForgeRegistries.POTIONS.getValue(new ResourceLocation(effectName)));
+    				}
+    			}else{
+    				player.addPotionEffect(new EffectInstance(effectMap.get(effectName), 100, 0));
+    			}
     		}
     	}
     	
@@ -89,13 +94,19 @@ public final class PlayerUpdateSystem{
     	}
     }
     
+    /**
+	 * Create a new PlayerProperties class from player NBT, or a default one if the NBT is not present.
+	 */
     @SubscribeEvent
     public static void loadPlayer(PlayerEvent.LoadFromFile event){
     	playerProperties.put(event.getPlayer(), new PlayerProperties(event.getPlayer().getPersistentData()));
     }
     
+    /**
+	 * Save data from PlayerProperties class to NBT.
+	 */
     @SubscribeEvent
     public static void savePlayer(PlayerEvent.SaveToFile event){
-    	event.getPlayer().getPersistentData().put("emine", playerProperties.get(event.getPlayer()).getNBT());
+    	event.getPlayer().getPersistentData().put(EMINE.MODID, playerProperties.get(event.getPlayer()).getNBT());
     }
 }

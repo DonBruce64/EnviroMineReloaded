@@ -65,6 +65,8 @@ public final class ConfigSystem{
 		public final ForgeConfigSpec.DoubleValue waterUsageHot;
 		public final ForgeConfigSpec.IntValue dehydrationLevel;
 		public final ForgeConfigSpec.IntValue dehydrationDamage;
+		public final ForgeConfigSpec.IntValue itemHydration;
+		public final ForgeConfigSpec.IntValue thirstDuration;
 		public final ForgeConfigSpec.ConfigValue<List<String>> dehydrationEffects;
 		
 		CommonConfig(final ForgeConfigSpec.Builder builder){
@@ -116,6 +118,14 @@ public final class ConfigSystem{
 				.comment("How much damage to apply every 5 seconds when a player's thirst is at 0.  \nSet to 0 to disable damage at 0 thirst.")
 				.translation(EMINE.MODID + ".config.dehydrationDamage")
 				.defineInRange("dehydrationDamage", 1, 0, 100);
+			itemHydration = builder
+				.comment("How much hydration drinkable items restore.  Note that this works for mod items as well as regular water bottles and potions!")
+				.translation(EMINE.MODID + ".config.itemHydration")
+				.defineInRange("itemHydration", 10, 0, 100);
+			thirstDuration = builder
+				.comment("How many seconds the thirst effect should last when applied to a player.")
+				.translation(EMINE.MODID + ".config.thirstDuration")
+				.defineInRange("thirstDuration", 30, 0, 100);
 			dehydrationEffects = builder
 				.comment("A list of potions (effects) to apply to dehydrated players.  \nThis list should contain the names of potions that will be active when dehydrated.")
 				.translation(EMINE.MODID + ".config.dehydrationEffects")

@@ -1,5 +1,6 @@
 package enviromine.dataclasses;
 
+import enviromine.EMINE;
 import net.minecraft.nbt.CompoundNBT;
 
 /**This class is the structure for player runtime properties like hydration,
@@ -13,17 +14,12 @@ public final class PlayerProperties{
 	private static final double startingTemp = 98.6D;
 	private static final double startingHydration = 100D;
 	
-	public boolean isDehydrated;
-	public boolean isOverheated;
-	public boolean isHypothermia;
-	
 	public double temp;
 	public double hydration;
 
 	public PlayerProperties(CompoundNBT playerNBT){
-		if(playerNBT.contains("emine")){
-			CompoundNBT emineNBT = playerNBT.getCompound("emine");
-			this.isDehydrated = emineNBT.getBoolean("dehydrated");
+		if(playerNBT.contains(EMINE.MODID)){
+			CompoundNBT emineNBT = playerNBT.getCompound(EMINE.MODID);
 			this.temp = emineNBT.getDouble("temp");
 			this.hydration = emineNBT.getDouble("hydration");
 		}else{
@@ -34,9 +30,6 @@ public final class PlayerProperties{
 	
 	public CompoundNBT getNBT(){
 		CompoundNBT emineNBT = new CompoundNBT();
-		emineNBT.putBoolean("isDehydrated", this.isDehydrated);
-		emineNBT.putBoolean("isOverheated", this.isOverheated);
-		emineNBT.putBoolean("isHypothermia", this.isHypothermia);
 		emineNBT.putDouble("temp", this.temp);
 		emineNBT.putDouble("hydration", this.hydration);
 		return emineNBT;

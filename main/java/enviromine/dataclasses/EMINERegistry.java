@@ -7,23 +7,24 @@ import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Effect;
+import net.minecraft.potion.EffectInstance;
+import net.minecraft.potion.Potion;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**Main registry class.  This class should be referenced by any class looking for
- * EMINE items or blocks.  Adding new items and blocks is a simple as adding them
- * as a field; the init method automatically registers all items and blocks in the class
- * and orders them according to the order in which they were declared.
+ * enviromine registerable objects.  Adding new objects is a simple as adding them
+ * as a field; events will do the rest through reflection.  This is a bit more concice
+ * than the newer way of using ObjectHolder references as there's only one area where the
+ * object needs to be added.
  * 
  * @author don_bruce
  */
-@Mod.EventBusSubscriber
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class EMINERegistry{
-	/**All registered items are stored in this list as they are added.  Used to sort items in the creative tab.**/
-	public static List<Item> itemList = new ArrayList<Item>();
-
 	//Items
 	//public static final Item manual = new ItemManual().setCreativeTab(coreTab);
 	
@@ -33,6 +34,12 @@ public final class EMINERegistry{
 	//Fuel pump.
 	//public static final Block fuelPump = new BlockFuelPump().setCreativeTab(coreTab);		
 	//public static final Item itemBlockFuelPump = new ItemBlock(fuelPump);
+	
+	//Effects
+	public static final Effect THIRST = new EMINEEffects.ThirstEffect();
+	
+	//Potions
+	public static final Potion SALT_WATER = new Potion(new EffectInstance(THIRST, 600, 0, false, false));
 	
 	//Counters for registry systems.
 	private static int packetNumber = 0;
@@ -89,11 +96,9 @@ public final class EMINERegistry{
 					String name = field.getName().toLowerCase();
 					if(!name.startsWith("itemblock")){
 						event.getRegistry().register(item.setRegistryName(name));
-						EMINERegistry.itemList.add(item);
 					}else{
 						name = name.substring("itemblock".length());
 						event.getRegistry().register(item.setRegistryName(name));
-						EMINERegistry.itemList.add(item);
 					}
 				}catch(Exception e){
 					e.printStackTrace();
@@ -101,6 +106,40 @@ public final class EMINERegistry{
 			}
 		}
 	}
+	
+	
+
+	@SubscribeEvent
+	public static void registerEffects(RegistryEvent.Register<Effect> event){
+		for(Field field : EMINERegistry.class.getFields()){
+			if(field.getType().equals(Effect.class)){
+				try{
+					Effect effect = (Effect) field.get(null);
+					effect.setRegistryName(field.getName().toLowerCase());
+					event.getRegistry().register(effect);
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
+
+	@SubscribeEvent
+	public static void registerPotions(RegistryEvent.Register<Potion> event){
+		for(Field field : EMINERegistry.class.getFields()){
+			if(field.getType().equals(Potion.class)){
+				try{
+					Potion potion = (Potion) field.get(null);
+					potion.setRegistryName(field.getName().toLowerCase());
+					event.getRegistry().register(potion);
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
 	
 	private static void initPackets(){
 		//registerPacket(AileronPacket.class, AileronPacket.Handler.class, true, true);
