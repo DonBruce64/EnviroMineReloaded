@@ -1,12 +1,13 @@
 package enviromine.systems;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Items;
 import net.minecraft.item.UseAction;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.Mod;
 
 /**This class handles events that need to happen on cue.
@@ -21,13 +22,22 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber
 public final class ActionEventSystem{
 	/**
-	 * Intercept right-clicking with a bottle or container of water and ensure we set the correct water.
+	 * Intercept right-clicking with a bottle or container and make sure that the
+	 * water we get is the correct type.  This is done to prevent mucking around
+	 * with worldgen.
 	 */
 	@SubscribeEvent
-    public static void on(PlayerInteractEvent.RightClickBlock event){
-		Block clickedBlock = event.getPlayer().getEntityWorld().getBlockState(event.getPos()).getBlock();
-		if(clickedBlock.equals(Blocks.WATER)){
-			//TODO intercept item function and set new liquid.
+    public static void on(PlayerInteractEvent.RightClickItem event){
+		if(Items.GLASS_BOTTLE.equals(event.getItemStack().getItem())){
+			//Player used a glass bottle, presumably to fill it with water.
+			//Will let the PlayerUpdateSystem check that, however.
+			PlayerUpdateSystem.playersWhoFilledBottles.put(event.getPlayer(), event.getHand());
+		}else{
+			IFluidHandlerItem fluidHandler = event.getItemStack().getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY).orElse(null);
+			if(fluidHandler != null){
+				//We are interacting with water with a liquid container.
+				PlayerUpdateSystem.playersWhoFilledContainers.put(event.getPlayer(), fluidHandler.getFluidInTank(0).getAmount());
+			}
 		}
     }
 	

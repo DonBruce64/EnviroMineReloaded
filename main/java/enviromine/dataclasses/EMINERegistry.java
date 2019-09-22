@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.FlowingFluidBlock;
+import net.minecraft.block.material.Material;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.WaterFluid;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Effect;
@@ -13,7 +17,10 @@ import net.minecraft.potion.Potion;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryManager;
 
 /**Main registry class.  This class should be referenced by any class looking for
  * enviromine registerable objects.  Adding new objects is a simple as adding them
@@ -24,26 +31,32 @@ import net.minecraftforge.fml.common.Mod;
  * @author don_bruce
  */
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
-public final class EMINERegistry{
-	//Items
-	//public static final Item manual = new ItemManual().setCreativeTab(coreTab);
-	
+public final class EMINERegistry{	
 	//Blocks
-	//public static final Block vehicleBench = new BlockPartBench("plane", "car");
 	
-	//Fuel pump.
-	//public static final Block fuelPump = new BlockFuelPump().setCreativeTab(coreTab);		
-	//public static final Item itemBlockFuelPump = new ItemBlock(fuelPump);
+	//Items
 	
 	//Effects
 	public static final Effect THIRST = new EMINEEffects.ThirstEffect();
 	
+	//Fluids
+	public static final Fluid SALT_WATER = new WaterFluid.Source(){
+		@Override
+		public Fluid getFlowingFluid(){
+			return SALT_WATER;
+		}
+		
+		@Override
+		public Fluid getStillFluid(){
+			return SALT_WATER;
+		}
+	};
+	
 	//Potions
-	public static final Potion SALT_WATER = new Potion(new EffectInstance(THIRST, 600, 0, false, false));
+	public static final Potion SALT_WATER_POTION = new Potion(new EffectInstance(THIRST, 600, 0, false, false));
 	
 	//Counters for registry systems.
 	private static int packetNumber = 0;
-	private static int craftingNumber = 0;
 	
 	
 	/**All run-time things go here.**/
@@ -124,6 +137,20 @@ public final class EMINERegistry{
 		}
 	}
 	
+	@SubscribeEvent
+	public static void registerFluids(RegistryEvent.Register<Fluid> event){
+		for(Field field : EMINERegistry.class.getFields()){
+			if(field.getType().equals(Fluid.class)){
+				try{
+					Fluid fluid = (Fluid) field.get(null);
+					fluid.setRegistryName(field.getName().toLowerCase());
+					event.getRegistry().register(fluid);
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 
 	@SubscribeEvent
 	public static void registerPotions(RegistryEvent.Register<Potion> event){

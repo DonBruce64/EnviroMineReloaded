@@ -2,20 +2,31 @@ package enviromine.systems;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import enviromine.EMINE;
 import enviromine.dataclasses.DamageSources;
+import enviromine.dataclasses.EMINERegistry;
 import enviromine.dataclasses.PlayerProperties;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluids;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectInstance;
-import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionUtils;
+import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.biome.Biome.Category;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -31,11 +42,49 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber
 public final class PlayerUpdateSystem{
 	public static final Map<PlayerEntity, PlayerProperties> playerProperties = new HashMap<PlayerEntity, PlayerProperties>();
+	public static final Map<PlayerEntity, Integer> playersWhoFilledContainers = new HashMap<PlayerEntity, Integer>();
+	public static final Map<PlayerEntity, Hand> playersWhoFilledBottles = new HashMap<PlayerEntity, Hand>();
 	private static final Map<String, Effect> effectMap = new HashMap<String, Effect>();
 	
 	@SubscribeEvent
     public static void playerTick(TickEvent.PlayerTickEvent event){
-		//Only calculate every second at the end of the tick.
+		//If we were flagged for picking up bad water, set it here.
+		if(event.phase.equals(Phase.END)){
+			if(!playersWhoFilledContainers.isEmpty()){
+				for(Entry<PlayerEntity, Integer> playerEntry : playersWhoFilledContainers.entrySet()){
+					PlayerEntity player = playerEntry.getKey();
+					int lastFluidLevel = playerEntry.getValue();
+					IFluidHandlerItem fluidHandler = player.getHeldItem(player.getActiveHand()).getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY).orElse(null);
+					int fluidChange =  fluidHandler.getFluidInTank(0).getAmount() - lastFluidLevel;
+					//Check to see if we added water.  If so, we need to change it to something else.
+					if(Fluids.WATER.equals(fluidHandler.getFluidInTank(0).getFluid()) && fluidChange > 0){
+						//Drain the tank of water to get it back to its old level, then add bad water.
+						//TODO this isn't working because I can't figure out how to make new fluids.
+						if(Category.OCEAN.equals(player.world.getBiome(player.getPosition()).getCategory())){
+							fluidHandler.drain(new FluidStack(Fluids.WATER, fluidChange), FluidAction.EXECUTE);
+							fluidHandler.fill(new FluidStack(EMINERegistry.SALT_WATER, fluidChange), FluidAction.EXECUTE);
+							System.out.println(fluidHandler.getFluidInTank(0).getFluid());
+						}
+					}
+					
+				}
+				playersWhoFilledContainers.clear();
+			}else if(!playersWhoFilledBottles.isEmpty()){
+				for(Entry<PlayerEntity, Hand> playerEntry : playersWhoFilledBottles.entrySet()){
+					PlayerEntity player = playerEntry.getKey();
+					//If the player has a water bottle, they need checking.
+					//if(player.getHeldItem(playerEntry.getValue()))
+					if(Category.OCEAN.equals(player.world.getBiome(player.getPosition()).getCategory())){
+						//Ocean.  Salt water potion should be in the player's hand rather than a water bottle.
+						player.setHeldItem(playerEntry.getValue(), PotionUtils.addPotionToItemStack(new ItemStack(Items.POTION), EMINERegistry.SALT_WATER_POTION));
+					}
+				}
+				playersWhoFilledBottles.clear();
+			}
+		}
+		
+		
+		//Only calculate properties every second at the end of the tick.
 		if(event.player.getEntityWorld().getGameTime()%20 == 1 && event.phase.equals(Phase.END)){
 			PlayerEntity player = event.player;
 	    	if(playerProperties.containsKey(player)){
@@ -108,5 +157,15 @@ public final class PlayerUpdateSystem{
     @SubscribeEvent
     public static void savePlayer(PlayerEvent.SaveToFile event){
     	event.getPlayer().getPersistentData().put(EMINE.MODID, playerProperties.get(event.getPlayer()).getNBT());
+    }
+    
+    /**
+	 * Resets data for the player if they die.
+	 */
+    @SubscribeEvent
+    public static void respawnPlayer(PlayerEvent.PlayerRespawnEvent event){
+    	if(!event.isEndConquered()){
+    		playerProperties.get(event.getPlayer()).reset();
+    	}
     }
 }

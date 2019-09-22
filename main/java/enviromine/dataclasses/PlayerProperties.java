@@ -23,8 +23,7 @@ public final class PlayerProperties{
 			this.temp = emineNBT.getDouble("temp");
 			this.hydration = emineNBT.getDouble("hydration");
 		}else{
-			this.temp = startingTemp;
-			this.hydration = startingHydration;
+			reset();
 		}
 	}
 	
@@ -33,5 +32,10 @@ public final class PlayerProperties{
 		emineNBT.putDouble("temp", this.temp);
 		emineNBT.putDouble("hydration", this.hydration);
 		return emineNBT;
+	}
+	
+	public void reset(){
+		this.temp = startingTemp;
+		this.hydration = startingHydration;
 	}
 }
